@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Builder</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Resume Builder</h1>
+        <p>Create a professional resume in minutes</p>
+      </header>
+
+      <div class="content">
+        <aside class="editor">
+          <section class="card">
+            <h2>Templates</h2>
+            <div class="template-buttons">
+              <button class="template-btn active" data-template="minimal">
+                Minimal
+              </button>
+              <button class="template-btn" data-template="professional">
+                Professional
+              </button>
+              <button class="template-btn" data-template="modern">
+                Modern
+              </button>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>Personal Information</h2>
+            <div class="photo-upload">
+              <label for="photoUpload" class="photo-label">
+                <div id="photoPreview" class="photo-preview">
+                  <span>+ Add Photo (Optional)</span>
+                </div>
+              </label>
+              <input
+                type="file"
+                id="photoUpload"
+                accept="image/*"
+                style="display: none"
+              />
+              <button
+                id="removePhoto"
+                class="remove-photo-btn"
+                style="display: none"
+              >
+                Remove Photo
+              </button>
+            </div>
+            <input type="text" id="name" placeholder="Full Name" />
+            <input type="email" id="email" placeholder="Email" />
+            <input type="tel" id="phone" placeholder="Phone" />
+            <input type="text" id="location" placeholder="Location" />
+            <textarea
+              id="summary"
+              placeholder="Professional Summary"
+            ></textarea>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2>Experience</h2>
+              <button class="add-btn" id="addExperience">+ Add</button>
+            </div>
+            <div id="experienceList"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2>Education</h2>
+              <button class="add-btn" id="addEducation">+ Add</button>
+            </div>
+            <div id="educationList"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2>Skills</h2>
+              <button class="add-btn" id="addSkill">+ Add</button>
+            </div>
+            <div id="skillsList"></div>
+          </section>
+
+          <section class="card">
+            <button class="tips-toggle" id="tipsToggle">
+              💡 Resume Writing Tips
+            </button>
+            <ul class="tips" id="tips" style="display: none">
+              <li>
+                Keep your resume to one page if you have less than 10 years of
+                experience
+              </li>
+              <li>
+                Use action verbs to describe your achievements (e.g., "Led",
+                "Developed", "Increased")
+              </li>
+              <li>
+                Quantify your accomplishments with numbers and percentages when
+                possible
+              </li>
+              <li>
+                Tailor your resume to each job application by highlighting
+                relevant skills
+              </li>
+              <li>Proofread carefully - typos can cost you the interview</li>
+            </ul>
+          </section>
+        </aside>
+
+        <main class="preview-section">
+          <div class="preview-header">
+            <h2>Preview</h2>
+            <button class="export-btn" id="exportPDF">↪ Export PDF</button>
+          </div>
+          <div class="preview-wrapper">
+            <div id="resumePreview" class="resume"></div>
+          </div>
+        </main>
+      </div>
+
+      <footer>
+        <p>
+          Copyright © 2025 Gurbax (Ashwini Gurbaxani). Built using
+          <a href="https://aimddb.com/" target="_blank" rel="noopener">AI</a>.
+        </p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
