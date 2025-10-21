@@ -252,7 +252,8 @@ function renderSkills() {
   skillsList.innerHTML = state.skills
     .map(
       (skill, index) => `
-        <div class="skill-item">
+        <div class="skill-item" draggable="true" data-index="${index}">
+            <span class="drag-handle">⋮⋮</span>
             <input type="text" placeholder="Skill" value="${skill}" onchange="updateSkill(${index}, this.value)">
             ${
               state.skills.length > 1
@@ -263,6 +264,63 @@ function renderSkills() {
     `
     )
     .join("");
+
+  setupSkillDragListeners();
+}
+
+function setupSkillDragListeners() {
+  const skillItems = document.querySelectorAll(".skill-item");
+  let draggedElement = null;
+  let draggedIndex = null;
+
+  skillItems.forEach((item) => {
+    item.addEventListener("dragstart", (e) => {
+      draggedElement = item;
+      draggedIndex = parseInt(item.dataset.index);
+      item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+      draggedElement = null;
+      draggedIndex = null;
+    });
+
+    item.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+
+      if (item !== draggedElement && draggedElement) {
+        const allItems = [...skillItems];
+        const targetIndex = allItems.indexOf(item);
+
+        if (draggedIndex < targetIndex) {
+          item.parentNode.insertBefore(draggedElement, item.nextSibling);
+        } else {
+          item.parentNode.insertBefore(draggedElement, item);
+        }
+      }
+    });
+
+    item.addEventListener("drop", (e) => {
+      e.preventDefault();
+    });
+  });
+
+  // Handle the final drop to update state
+  skillsList.addEventListener("drop", (e) => {
+    if (draggedElement) {
+      const allItems = [...document.querySelectorAll(".skill-item")];
+      const newIndex = allItems.indexOf(draggedElement);
+
+      if (draggedIndex !== newIndex) {
+        const [movedSkill] = state.skills.splice(draggedIndex, 1);
+        state.skills.splice(newIndex, 0, movedSkill);
+        render();
+      }
+    }
+  });
 }
 
 function updateExperience(id, field, value) {

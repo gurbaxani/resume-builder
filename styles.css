@@ -696,3 +696,33 @@ footer a {
     color: #2a9d8f !important;
   }
 }
+
+.skill-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+  cursor: move;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.skill-item.dragging {
+  opacity: 0.5;
+}
+
+.skill-item:hover {
+  background-color: #fafafa;
+  border-radius: 4px;
+  padding: 0 0.25rem;
+}
+
+.drag-handle {
+  color: #ccc;
+  font-size: 0.75rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.skill-item input {
+  margin-bottom: 0;
+}
