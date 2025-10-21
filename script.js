@@ -1,6 +1,10 @@
 // State with demo data
 let state = {
   template: "minimal",
+  colors: {
+    primary: "#e76f51",
+    secondary: "#2a9d8f",
+  },
   photo: "photo.jpg",
   personalInfo: {
     name: "Sarah Johnson",
@@ -74,6 +78,8 @@ const resumePreview = document.getElementById("resumePreview");
 const exportBtn = document.getElementById("exportPDF");
 const tipsToggle = document.getElementById("tipsToggle");
 const tips = document.getElementById("tips");
+const colorPrimaryInput = document.getElementById("colorPrimary");
+const colorSecondaryInput = document.getElementById("colorSecondary");
 
 // Initialize inputs with demo data
 nameInput.value = state.personalInfo.name;
@@ -81,6 +87,8 @@ emailInput.value = state.personalInfo.email;
 phoneInput.value = state.personalInfo.phone;
 locationInput.value = state.personalInfo.location;
 summaryInput.value = state.personalInfo.summary;
+colorPrimaryInput.value = state.colors.primary;
+colorSecondaryInput.value = state.colors.secondary;
 
 if (state.photo) {
   photoPreview.innerHTML = `<img src="${state.photo}" alt="Profile photo">`;
@@ -88,6 +96,16 @@ if (state.photo) {
 }
 
 // Event Listeners
+colorPrimaryInput.addEventListener("input", (e) => {
+  state.colors.primary = e.target.value;
+  render();
+});
+
+colorSecondaryInput.addEventListener("input", (e) => {
+  state.colors.secondary = e.target.value;
+  render();
+});
+
 nameInput.addEventListener("input", (e) => {
   state.personalInfo.name = e.target.value;
   render();
@@ -757,6 +775,44 @@ function renderModernTemplate() {
 function render() {
   let html = "";
 
+  // Add CSS variables override
+  const styleOverride = `
+    <style>
+      :root {
+        --color-primary: ${state.colors.primary};
+        --color-secondary: ${state.colors.secondary};
+        --color-accent: #f4a261;
+      }
+      .resume-minimal .header h1,
+      .resume-professional .header h1,
+      .resume-modern .sidebar h1 {
+        color: var(--color-primary) !important;
+      }
+      .resume-minimal .section-title {
+        border-bottom-color: var(--color-secondary) !important;
+      }
+      .resume-professional .header {
+        border-bottom-color: var(--color-secondary) !important;
+      }
+      .resume-professional .section-title,
+      .resume-professional .header h1 {
+        color: var(--color-secondary) !important;
+      }
+      .resume-professional .entry-subtitle {
+        color: var(--color-accent) !important;
+      }
+      .resume-modern .sidebar {
+        background: var(--color-primary) !important;
+      }
+      .resume-modern .main .section-title {
+        color: var(--color-primary) !important;
+      }
+      .resume-modern .entry-subtitle {
+        color: var(--color-secondary) !important;
+      }
+    </style>
+  `;
+
   switch (state.template) {
     case "minimal":
       html = renderMinimalTemplate();
@@ -771,7 +827,7 @@ function render() {
       html = renderMinimalTemplate();
   }
 
-  resumePreview.innerHTML = html;
+  resumePreview.innerHTML = styleOverride + html;
 }
 
 // Add this function to your script.js

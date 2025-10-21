@@ -10,13 +10,13 @@
     <div class="container">
       <header>
         <h1>Resume Builder</h1>
-        <p>Create a professional resume in minutes</p>
+        <p>Create an impressive resume in minutes</p>
       </header>
 
       <div class="content">
         <aside class="editor">
           <section class="card">
-            <h2>Templates</h2>
+            <h2>Template</h2>
             <div class="template-buttons">
               <button class="template-btn active" data-template="minimal">
                 Minimal
@@ -28,8 +28,43 @@
                 Modern
               </button>
             </div>
+            <div style="display: flex; gap: 2rem; margin-top: 1.5rem">
+              <div style="display: flex; align-items: center; gap: 0.75rem">
+                <span style="font-size: 0.875rem; color: #666; min-width: 50px"
+                  >Primary color</span
+                >
+                <input
+                  type="color"
+                  id="colorPrimary"
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    cursor: pointer;
+                    border: 1px solid #e5e5e5;
+                    border-radius: 4px;
+                    padding: 2px;
+                  "
+                />
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.75rem">
+                <span style="font-size: 0.875rem; color: #666; min-width: 70px"
+                  >Secondary color</span
+                >
+                <input
+                  type="color"
+                  id="colorSecondary"
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    cursor: pointer;
+                    border: 1px solid #e5e5e5;
+                    border-radius: 4px;
+                    padding: 2px;
+                  "
+                />
+              </div>
+            </div>
           </section>
-
           <section class="card">
             <h2>Personal Information</h2>
             <div class="photo-upload">
