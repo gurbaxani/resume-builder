@@ -1,11 +1,11 @@
-// State with demo data
-let state = {
+// Default data for new users
+const defaultState = {
   template: "minimal",
   colors: {
     primary: "#e76f51",
     secondary: "#2a9d8f",
   },
-  photo: "photo.jpg",
+  photo: null,
   personalInfo: {
     name: "Sarah Johnson",
     email: "sarah.johnson@email.com",
@@ -60,7 +60,26 @@ let state = {
   ],
 };
 
+// Initialize State (Load from LocalStorage or use Default)
+let state = defaultState;
 let nextId = 5;
+
+const savedState = localStorage.getItem("resumeBuilderState");
+if (savedState) {
+  try {
+    state = JSON.parse(savedState);
+
+    // Recalculate nextId to prevent ID collisions
+    const allIds = [
+      ...state.experience.map((e) => e.id),
+      ...state.education.map((e) => e.id),
+    ];
+    if (allIds.length > 0) nextId = Math.max(...allIds) + 1;
+  } catch (e) {
+    console.error("Error loading saved state", e);
+    state = defaultState;
+  }
+}
 
 // DOM Elements
 const nameInput = document.getElementById("name");
@@ -81,7 +100,15 @@ const tips = document.getElementById("tips");
 const colorPrimaryInput = document.getElementById("colorPrimary");
 const colorSecondaryInput = document.getElementById("colorSecondary");
 
-// Initialize inputs with demo data
+// Job Matcher Elements
+const jobDescriptionInput = document.getElementById("jobDescription");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const analysisResult = document.getElementById("analysisResult");
+const scoreText = document.getElementById("scoreText");
+const scoreCirclePath = document.getElementById("scoreCirclePath");
+const missingKeywordsContainer = document.getElementById("missingKeywords");
+
+// Initialize inputs with state data
 nameInput.value = state.personalInfo.name;
 emailInput.value = state.personalInfo.email;
 phoneInput.value = state.personalInfo.phone;
@@ -90,12 +117,24 @@ summaryInput.value = state.personalInfo.summary;
 colorPrimaryInput.value = state.colors.primary;
 colorSecondaryInput.value = state.colors.secondary;
 
+// Initialize Photo
 if (state.photo) {
   photoPreview.innerHTML = `<img src="${state.photo}" alt="Profile photo">`;
   removePhotoBtn.style.display = "block";
 }
 
-// Event Listeners
+// Set active template button
+document.querySelectorAll(".template-btn").forEach((btn) => {
+  if (btn.dataset.template === state.template) {
+    btn.classList.add("active");
+  } else {
+    btn.classList.remove("active");
+  }
+});
+
+// --- Event Listeners ---
+
+// Color Pickers
 colorPrimaryInput.addEventListener("input", (e) => {
   state.colors.primary = e.target.value;
   render();
@@ -106,6 +145,7 @@ colorSecondaryInput.addEventListener("input", (e) => {
   render();
 });
 
+// Personal Info
 nameInput.addEventListener("input", (e) => {
   state.personalInfo.name = e.target.value;
   render();
@@ -131,6 +171,7 @@ summaryInput.addEventListener("input", (e) => {
   render();
 });
 
+// Photo Handling
 photoUpload.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file && file.type.startsWith("image/")) {
@@ -153,6 +194,7 @@ removePhotoBtn.addEventListener("click", () => {
   render();
 });
 
+// Template Switching
 document.querySelectorAll(".template-btn").forEach((btn) => {
   btn.addEventListener("click", (e) => {
     document
@@ -164,6 +206,7 @@ document.querySelectorAll(".template-btn").forEach((btn) => {
   });
 });
 
+// Add/Remove Items
 document.getElementById("addExperience").addEventListener("click", () => {
   state.experience.push({
     id: nextId++,
@@ -194,6 +237,7 @@ document.getElementById("addSkill").addEventListener("click", () => {
   render();
 });
 
+// Export/Import/Tips
 exportBtn.addEventListener("click", () => {
   window.print();
 });
@@ -203,7 +247,89 @@ tipsToggle.addEventListener("click", () => {
   tips.style.display = isHidden ? "block" : "none";
 });
 
-// Render Functions
+document.getElementById("exportJSON").addEventListener("click", () => {
+  exportJSON();
+});
+
+document.getElementById("importJSON").addEventListener("click", () => {
+  importJSON();
+});
+
+// Job Matcher Analysis Listener
+if (analyzeBtn) {
+  analyzeBtn.addEventListener("click", calculateMatch);
+}
+
+// --- Render Logic ---
+
+function render() {
+  // Auto-Save to LocalStorage
+  try {
+    localStorage.setItem("resumeBuilderState", JSON.stringify(state));
+  } catch (e) {
+    if (e.name === "QuotaExceededError") {
+      console.warn(
+        "Resume is too large to auto-save (likely due to photo size)."
+      );
+    }
+  }
+
+  // CSS Variables for Colors
+  const styleOverride = `
+    <style>
+      :root {
+        --color-primary: ${state.colors.primary};
+        --color-secondary: ${state.colors.secondary};
+        --color-accent: #f4a261;
+      }
+      .resume-minimal .header h1,
+      .resume-professional .header h1,
+      .resume-modern .sidebar h1 {
+        color: var(--color-primary) !important;
+      }
+      .resume-minimal .section-title {
+        border-bottom-color: var(--color-secondary) !important;
+      }
+      .resume-professional .header {
+        border-bottom-color: var(--color-secondary) !important;
+      }
+      .resume-professional .section-title,
+      .resume-professional .header h1 {
+        color: var(--color-secondary) !important;
+      }
+      .resume-professional .entry-subtitle {
+        color: var(--color-accent) !important;
+      }
+      .resume-modern .sidebar {
+        background: var(--color-primary) !important;
+      }
+      .resume-modern .main .section-title {
+        color: var(--color-primary) !important;
+      }
+      .resume-modern .entry-subtitle {
+        color: var(--color-secondary) !important;
+      }
+    </style>
+  `;
+
+  let html = "";
+  switch (state.template) {
+    case "minimal":
+      html = renderMinimalTemplate();
+      break;
+    case "professional":
+      html = renderProfessionalTemplate();
+      break;
+    case "modern":
+      html = renderModernTemplate();
+      break;
+    default:
+      html = renderMinimalTemplate();
+  }
+
+  resumePreview.innerHTML = styleOverride + html;
+}
+
 function renderExperience() {
   experienceList.innerHTML = state.experience
     .map(
@@ -326,7 +452,6 @@ function setupSkillDragListeners() {
     });
   });
 
-  // Handle the final drop to update state
   skillsList.addEventListener("drop", (e) => {
     if (draggedElement) {
       const allItems = [...document.querySelectorAll(".skill-item")];
@@ -335,11 +460,13 @@ function setupSkillDragListeners() {
       if (draggedIndex !== newIndex) {
         const [movedSkill] = state.skills.splice(draggedIndex, 1);
         state.skills.splice(newIndex, 0, movedSkill);
-        render();
+        render(); // This will trigger auto-save
       }
     }
   });
 }
+
+// --- Data Modification Functions ---
 
 function updateExperience(id, field, value) {
   const exp = state.experience.find((e) => e.id === id);
@@ -379,6 +506,267 @@ function removeSkill(index) {
   renderSkills();
   render();
 }
+
+// --- Job Matcher Logic ---
+
+const stopWords = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "of",
+  "with",
+  "by",
+  "from",
+  "up",
+  "about",
+  "into",
+  "over",
+  "after",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "will",
+  "would",
+  "can",
+  "could",
+  "should",
+  "this",
+  "that",
+  "these",
+  "those",
+  "it",
+  "he",
+  "she",
+  "they",
+  "we",
+  "you",
+  "i",
+  "me",
+  "my",
+  "our",
+  "your",
+  "their",
+  "them",
+  "what",
+  "which",
+  "who",
+  "whom",
+  "whose",
+  "when",
+  "where",
+  "why",
+  "how",
+  "as",
+  "if",
+  "than",
+  "job",
+  "description",
+  "requirements",
+  "responsibilities",
+  "role",
+  "work",
+  "team",
+  "experience",
+  "years",
+  "looking",
+]);
+
+function calculateMatch() {
+  const jdText = jobDescriptionInput.value.trim();
+
+  if (!jdText) {
+    alert("Please paste a job description first.");
+    return;
+  }
+
+  // 1. Compile all text from the Resume State
+  let resumeText = [
+    state.personalInfo.summary,
+    ...state.experience.map((e) => `${e.position} ${e.description}`),
+    ...state.education.map((e) => `${e.degree} ${e.details}`),
+    ...state.skills,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  // 2. Tokenize and clean Job Description
+  const jdTokens = getCleanTokens(jdText);
+  const resumeTokens = new Set(getCleanTokens(resumeText));
+
+  // 3. Find unique significant keywords in JD
+  const significantKeywords = [...new Set(jdTokens)].filter(
+    (token) => !stopWords.has(token) && token.length > 2
+  );
+
+  if (significantKeywords.length === 0) {
+    alert("Could not find enough significant keywords in the job description.");
+    return;
+  }
+
+  // 4. Calculate Match
+  const matchedKeywords = significantKeywords.filter(
+    (keyword) =>
+      resumeTokens.has(keyword) ||
+      // Check for partial matches (e.g., "managing" in JD matches "manage" in Resume)
+      [...resumeTokens].some(
+        (rt) => rt.includes(keyword) || keyword.includes(rt)
+      )
+  );
+
+  const missingKeywords = significantKeywords.filter(
+    (keyword) => !matchedKeywords.includes(keyword)
+  );
+
+  const score = Math.round(
+    (matchedKeywords.length / significantKeywords.length) * 100
+  );
+
+  // 5. Update UI
+  updateMatchUI(score, missingKeywords);
+}
+
+function getCleanTokens(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.trim().length > 0);
+}
+
+function updateMatchUI(score, missingWords) {
+  analysisResult.style.display = "block";
+
+  scoreText.textContent = `${score}%`;
+
+  let color = "#e74c3c"; // Red
+  if (score >= 50) color = "#f39c12"; // Orange
+  if (score >= 75) color = "#2a9d8f"; // Green
+
+  scoreCirclePath.style.stroke = color;
+  scoreCirclePath.setAttribute("stroke-dasharray", `${score}, 100`);
+
+  const topMissing = missingWords
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 10);
+
+  if (topMissing.length === 0) {
+    missingKeywordsContainer.innerHTML = `<span style="color: #2a9d8f; font-size: 0.875rem">Great match! No obvious missing keywords.</span>`;
+  } else {
+    missingKeywordsContainer.innerHTML = topMissing
+      .map((word) => `<span class="keyword-tag">${word}</span>`)
+      .join("");
+  }
+}
+
+// --- Import/Export Logic ---
+
+function exportJSON() {
+  const dataStr = JSON.stringify(state, null, 2);
+  const dataBlob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `resume_${state.personalInfo.name.replace(/\s+/g, "_")}_${
+    new Date().toISOString().split("T")[0]
+  }.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+
+  input.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+
+        if (
+          !importedData.personalInfo ||
+          !Array.isArray(importedData.experience) ||
+          !Array.isArray(importedData.education) ||
+          !Array.isArray(importedData.skills)
+        ) {
+          alert("Invalid resume file format");
+          return;
+        }
+
+        state = importedData;
+
+        // Recalculate nextId to avoid conflicts
+        const allIds = [
+          ...importedData.experience.map((e) => e.id),
+          ...importedData.education.map((e) => e.id),
+        ];
+        nextId = Math.max(...allIds, 4) + 1;
+
+        // Update all input fields
+        nameInput.value = state.personalInfo.name;
+        emailInput.value = state.personalInfo.email;
+        phoneInput.value = state.personalInfo.phone;
+        locationInput.value = state.personalInfo.location;
+        summaryInput.value = state.personalInfo.summary;
+        colorPrimaryInput.value = state.colors.primary;
+        colorSecondaryInput.value = state.colors.secondary;
+
+        if (state.photo) {
+          photoPreview.innerHTML = `<img src="${state.photo}" alt="Profile photo">`;
+          removePhotoBtn.style.display = "block";
+        } else {
+          photoPreview.innerHTML = "<span>+ Add Photo (Optional)</span>";
+          removePhotoBtn.style.display = "none";
+        }
+
+        document.querySelectorAll(".template-btn").forEach((btn) => {
+          btn.classList.remove("active");
+          if (btn.dataset.template === state.template) {
+            btn.classList.add("active");
+          }
+        });
+
+        renderExperience();
+        renderEducation();
+        renderSkills();
+        render(); // Triggers save
+
+        alert("Resume imported successfully!");
+      } catch (error) {
+        alert("Error importing file: " + error.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  input.click();
+}
+
+// --- Template Generators ---
 
 function renderMinimalTemplate() {
   const { name, email, phone, location, summary } = state.personalInfo;
@@ -772,349 +1160,7 @@ function renderModernTemplate() {
     `;
 }
 
-function render() {
-  let html = "";
-
-  // Add CSS variables override
-  const styleOverride = `
-    <style>
-      :root {
-        --color-primary: ${state.colors.primary};
-        --color-secondary: ${state.colors.secondary};
-        --color-accent: #f4a261;
-      }
-      .resume-minimal .header h1,
-      .resume-professional .header h1,
-      .resume-modern .sidebar h1 {
-        color: var(--color-primary) !important;
-      }
-      .resume-minimal .section-title {
-        border-bottom-color: var(--color-secondary) !important;
-      }
-      .resume-professional .header {
-        border-bottom-color: var(--color-secondary) !important;
-      }
-      .resume-professional .section-title,
-      .resume-professional .header h1 {
-        color: var(--color-secondary) !important;
-      }
-      .resume-professional .entry-subtitle {
-        color: var(--color-accent) !important;
-      }
-      .resume-modern .sidebar {
-        background: var(--color-primary) !important;
-      }
-      .resume-modern .main .section-title {
-        color: var(--color-primary) !important;
-      }
-      .resume-modern .entry-subtitle {
-        color: var(--color-secondary) !important;
-      }
-    </style>
-  `;
-
-  switch (state.template) {
-    case "minimal":
-      html = renderMinimalTemplate();
-      break;
-    case "professional":
-      html = renderProfessionalTemplate();
-      break;
-    case "modern":
-      html = renderModernTemplate();
-      break;
-    default:
-      html = renderMinimalTemplate();
-  }
-
-  resumePreview.innerHTML = styleOverride + html;
-}
-
-// Add this function to your script.js
-function exportJSON() {
-  const dataStr = JSON.stringify(state, null, 2);
-  const dataBlob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(dataBlob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `resume_${state.personalInfo.name.replace(/\s+/g, "_")}_${
-    new Date().toISOString().split("T")[0]
-  }.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function importJSON() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "application/json";
-
-  input.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const importedData = JSON.parse(event.target.result);
-
-        // Validate that imported data has the expected structure
-        if (
-          !importedData.personalInfo ||
-          !Array.isArray(importedData.experience) ||
-          !Array.isArray(importedData.education) ||
-          !Array.isArray(importedData.skills)
-        ) {
-          alert("Invalid resume file format");
-          return;
-        }
-
-        // Update state with imported data
-        state = importedData;
-
-        // Recalculate nextId to avoid conflicts
-        const allIds = [
-          ...importedData.experience.map((e) => e.id),
-          ...importedData.education.map((e) => e.id),
-        ];
-        nextId = Math.max(...allIds, 4) + 1;
-
-        // Update all input fields
-        nameInput.value = state.personalInfo.name;
-        emailInput.value = state.personalInfo.email;
-        phoneInput.value = state.personalInfo.phone;
-        locationInput.value = state.personalInfo.location;
-        summaryInput.value = state.personalInfo.summary;
-
-        // Update photo if it exists
-        if (state.photo) {
-          photoPreview.innerHTML = `<img src="${state.photo}" alt="Profile photo">`;
-          removePhotoBtn.style.display = "block";
-        } else {
-          photoPreview.innerHTML = "<span>+ Add Photo (Optional)</span>";
-          removePhotoBtn.style.display = "none";
-        }
-
-        // Update template selector
-        document.querySelectorAll(".template-btn").forEach((btn) => {
-          btn.classList.remove("active");
-          if (btn.dataset.template === state.template) {
-            btn.classList.add("active");
-          }
-        });
-
-        // Re-render all sections
-        renderExperience();
-        renderEducation();
-        renderSkills();
-        render();
-
-        alert("Resume imported successfully!");
-      } catch (error) {
-        alert("Error importing file: " + error.message);
-      }
-    };
-    reader.readAsText(file);
-  });
-
-  input.click();
-}
-
-document.getElementById("exportJSON").addEventListener("click", () => {
-  exportJSON();
-});
-
-document.getElementById("importJSON").addEventListener("click", () => {
-  importJSON();
-});
-
-// --- Job Matcher Logic ---
-
-// Common English stop words to ignore during analysis
-const stopWords = new Set([
-  "a",
-  "an",
-  "the",
-  "and",
-  "or",
-  "but",
-  "in",
-  "on",
-  "at",
-  "to",
-  "for",
-  "of",
-  "with",
-  "by",
-  "from",
-  "up",
-  "about",
-  "into",
-  "over",
-  "after",
-  "is",
-  "are",
-  "was",
-  "were",
-  "be",
-  "been",
-  "being",
-  "have",
-  "has",
-  "had",
-  "do",
-  "does",
-  "did",
-  "will",
-  "would",
-  "can",
-  "could",
-  "should",
-  "this",
-  "that",
-  "these",
-  "those",
-  "it",
-  "he",
-  "she",
-  "they",
-  "we",
-  "you",
-  "i",
-  "me",
-  "my",
-  "our",
-  "your",
-  "their",
-  "them",
-  "what",
-  "which",
-  "who",
-  "whom",
-  "whose",
-  "when",
-  "where",
-  "why",
-  "how",
-  "as",
-  "if",
-  "than",
-  "job",
-  "description",
-  "requirements",
-  "responsibilities",
-  "role",
-  "work",
-  "team",
-  "experience",
-  "years",
-  "looking",
-]);
-
-const jobDescriptionInput = document.getElementById("jobDescription");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const analysisResult = document.getElementById("analysisResult");
-const scoreText = document.getElementById("scoreText");
-const scoreCirclePath = document.getElementById("scoreCirclePath");
-const missingKeywordsContainer = document.getElementById("missingKeywords");
-
-analyzeBtn.addEventListener("click", calculateMatch);
-
-function calculateMatch() {
-  const jdText = jobDescriptionInput.value.trim();
-
-  if (!jdText) {
-    alert("Please paste a job description first.");
-    return;
-  }
-
-  // 1. Compile all text from the Resume State
-  let resumeText = [
-    state.personalInfo.summary,
-    ...state.experience.map((e) => `${e.position} ${e.description}`),
-    ...state.education.map((e) => `${e.degree} ${e.details}`),
-    ...state.skills,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  // 2. Tokenize and clean Job Description
-  const jdTokens = getCleanTokens(jdText);
-  const resumeTokens = new Set(getCleanTokens(resumeText));
-
-  // 3. Find unique significant keywords in JD
-  const significantKeywords = [...new Set(jdTokens)].filter(
-    (token) => !stopWords.has(token) && token.length > 2
-  );
-
-  if (significantKeywords.length === 0) {
-    alert("Could not find enough significant keywords in the job description.");
-    return;
-  }
-
-  // 4. Calculate Match
-  const matchedKeywords = significantKeywords.filter(
-    (keyword) =>
-      resumeTokens.has(keyword) ||
-      // Check for partial matches (e.g., "managing" in JD matches "manage" in Resume)
-      [...resumeTokens].some(
-        (rt) => rt.includes(keyword) || keyword.includes(rt)
-      )
-  );
-
-  const missingKeywords = significantKeywords.filter(
-    (keyword) => !matchedKeywords.includes(keyword)
-  );
-
-  const score = Math.round(
-    (matchedKeywords.length / significantKeywords.length) * 100
-  );
-
-  // 5. Update UI
-  updateMatchUI(score, missingKeywords);
-}
-
-function getCleanTokens(text) {
-  // Remove punctuation, convert to lowercase, split by whitespace
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s]/g, " ") // Replace punctuation with space
-    .split(/\s+/)
-    .filter((t) => t.trim().length > 0);
-}
-
-function updateMatchUI(score, missingWords) {
-  analysisResult.style.display = "block";
-
-  // Update Score Text
-  scoreText.textContent = `${score}%`;
-
-  // Update Circle Color and Progress
-  let color = "#e74c3c"; // Red
-  if (score >= 50) color = "#f39c12"; // Orange
-  if (score >= 75) color = "#2a9d8f"; // Green
-
-  scoreCirclePath.style.stroke = color;
-  scoreCirclePath.setAttribute("stroke-dasharray", `${score}, 100`);
-
-  // Update Missing Keywords (Show top 10 most relevant/long ones to save space)
-  // We sort by length to prioritize specific technical terms over generic words
-  const topMissing = missingWords
-    .sort((a, b) => b.length - a.length)
-    .slice(0, 10);
-
-  if (topMissing.length === 0) {
-    missingKeywordsContainer.innerHTML = `<span style="color: #2a9d8f; font-size: 0.875rem">Great match! No obvious missing keywords.</span>`;
-  } else {
-    missingKeywordsContainer.innerHTML = topMissing
-      .map((word) => `<span class="keyword-tag">${word}</span>`)
-      .join("");
-  }
-}
-
-// Initialize
+// Initial Render
 renderExperience();
 renderEducation();
 renderSkills();
