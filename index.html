@@ -122,6 +122,50 @@
           </section>
 
           <section class="card">
+            <h2>Job Match Score</h2>
+            <textarea
+              id="jobDescription"
+              placeholder="Paste the Job Description here to see how well your resume matches..."
+              style="min-height: 120px"
+            ></textarea>
+            <button
+              class="add-btn"
+              id="analyzeBtn"
+              style="width: 100%; margin-top: 0.5rem"
+            >
+              Analyze Match
+            </button>
+
+            <div id="analysisResult" style="display: none; margin-top: 1.5rem">
+              <div class="score-circle">
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                  <path
+                    class="circle-bg"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    id="scoreCirclePath"
+                    class="circle"
+                    stroke-dasharray="0, 100"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <text x="18" y="20.35" class="percentage" id="scoreText">
+                    0%
+                  </text>
+                </svg>
+              </div>
+
+              <div style="margin-top: 1rem">
+                <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem">
+                  Missing Keywords:
+                </h3>
+                <div id="missingKeywords" class="keyword-cloud"></div>
+              </div>
+            </div>
+          </section>
+          <!-- END NEW SECTION -->
+
+          <section class="card">
             <button class="tips-toggle" id="tipsToggle">
               💡 Resume Writing Tips
             </button>

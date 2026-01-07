@@ -930,6 +930,190 @@ document.getElementById("importJSON").addEventListener("click", () => {
   importJSON();
 });
 
+// --- Job Matcher Logic ---
+
+// Common English stop words to ignore during analysis
+const stopWords = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "of",
+  "with",
+  "by",
+  "from",
+  "up",
+  "about",
+  "into",
+  "over",
+  "after",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "will",
+  "would",
+  "can",
+  "could",
+  "should",
+  "this",
+  "that",
+  "these",
+  "those",
+  "it",
+  "he",
+  "she",
+  "they",
+  "we",
+  "you",
+  "i",
+  "me",
+  "my",
+  "our",
+  "your",
+  "their",
+  "them",
+  "what",
+  "which",
+  "who",
+  "whom",
+  "whose",
+  "when",
+  "where",
+  "why",
+  "how",
+  "as",
+  "if",
+  "than",
+  "job",
+  "description",
+  "requirements",
+  "responsibilities",
+  "role",
+  "work",
+  "team",
+  "experience",
+  "years",
+  "looking",
+]);
+
+const jobDescriptionInput = document.getElementById("jobDescription");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const analysisResult = document.getElementById("analysisResult");
+const scoreText = document.getElementById("scoreText");
+const scoreCirclePath = document.getElementById("scoreCirclePath");
+const missingKeywordsContainer = document.getElementById("missingKeywords");
+
+analyzeBtn.addEventListener("click", calculateMatch);
+
+function calculateMatch() {
+  const jdText = jobDescriptionInput.value.trim();
+
+  if (!jdText) {
+    alert("Please paste a job description first.");
+    return;
+  }
+
+  // 1. Compile all text from the Resume State
+  let resumeText = [
+    state.personalInfo.summary,
+    ...state.experience.map((e) => `${e.position} ${e.description}`),
+    ...state.education.map((e) => `${e.degree} ${e.details}`),
+    ...state.skills,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  // 2. Tokenize and clean Job Description
+  const jdTokens = getCleanTokens(jdText);
+  const resumeTokens = new Set(getCleanTokens(resumeText));
+
+  // 3. Find unique significant keywords in JD
+  const significantKeywords = [...new Set(jdTokens)].filter(
+    (token) => !stopWords.has(token) && token.length > 2
+  );
+
+  if (significantKeywords.length === 0) {
+    alert("Could not find enough significant keywords in the job description.");
+    return;
+  }
+
+  // 4. Calculate Match
+  const matchedKeywords = significantKeywords.filter(
+    (keyword) =>
+      resumeTokens.has(keyword) ||
+      // Check for partial matches (e.g., "managing" in JD matches "manage" in Resume)
+      [...resumeTokens].some(
+        (rt) => rt.includes(keyword) || keyword.includes(rt)
+      )
+  );
+
+  const missingKeywords = significantKeywords.filter(
+    (keyword) => !matchedKeywords.includes(keyword)
+  );
+
+  const score = Math.round(
+    (matchedKeywords.length / significantKeywords.length) * 100
+  );
+
+  // 5. Update UI
+  updateMatchUI(score, missingKeywords);
+}
+
+function getCleanTokens(text) {
+  // Remove punctuation, convert to lowercase, split by whitespace
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ") // Replace punctuation with space
+    .split(/\s+/)
+    .filter((t) => t.trim().length > 0);
+}
+
+function updateMatchUI(score, missingWords) {
+  analysisResult.style.display = "block";
+
+  // Update Score Text
+  scoreText.textContent = `${score}%`;
+
+  // Update Circle Color and Progress
+  let color = "#e74c3c"; // Red
+  if (score >= 50) color = "#f39c12"; // Orange
+  if (score >= 75) color = "#2a9d8f"; // Green
+
+  scoreCirclePath.style.stroke = color;
+  scoreCirclePath.setAttribute("stroke-dasharray", `${score}, 100`);
+
+  // Update Missing Keywords (Show top 10 most relevant/long ones to save space)
+  // We sort by length to prioritize specific technical terms over generic words
+  const topMissing = missingWords
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 10);
+
+  if (topMissing.length === 0) {
+    missingKeywordsContainer.innerHTML = `<span style="color: #2a9d8f; font-size: 0.875rem">Great match! No obvious missing keywords.</span>`;
+  } else {
+    missingKeywordsContainer.innerHTML = topMissing
+      .map((word) => `<span class="keyword-tag">${word}</span>`)
+      .join("");
+  }
+}
+
 // Initialize
 renderExperience();
 renderEducation();

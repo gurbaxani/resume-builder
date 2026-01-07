@@ -726,3 +726,61 @@ footer a {
 .skill-item input {
   margin-bottom: 0;
 }
+
+/* Job Matcher Styles */
+.score-circle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.circular-chart {
+  display: block;
+  margin: 10px auto;
+  max-width: 80%;
+  max-height: 250px;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 3.8;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  animation: progress 1s ease-out forwards;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.percentage {
+  fill: #666;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 0.5em;
+  text-anchor: middle;
+}
+
+.keyword-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.keyword-tag {
+  background: #fff0f0;
+  color: #e74c3c;
+  border: 1px solid #ffcdd2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+@keyframes progress {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+}
