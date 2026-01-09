@@ -5,7 +5,7 @@ const defaultState = {
     primary: "#e76f51",
     secondary: "#2a9d8f",
   },
-  photo: null,
+  photo: "photo.jpg",
   personalInfo: {
     name: "Sarah Johnson",
     email: "sarah.johnson@email.com",
